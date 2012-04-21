@@ -3,7 +3,8 @@
 ### Usage
 
 $ npm install websocket  
-$ node pongServer  
+$ node pongServer 
+// Player one. 
 $ index.html  
 ...  
 // Player two.  
