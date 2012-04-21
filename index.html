@@ -1,0 +1,202 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Canvas Test</title>      
+</head>
+<body>
+<section>
+
+<div>
+<canvas id="myCanvas" width="600" height="400">
+Browser not supported...
+</canvas>
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+<script type="text/javascript">
+
+"use strict";
+window.WebSocket = window.WebSocket || window.MozWebSocket;
+
+var width = 600;
+var height = 400;
+var bWidth = 10;
+var bHeight = 10;
+var pWidth = 15;
+var pHeight = 150;
+var ballX = width/2;
+var ballY = height/2;
+var lPaddleX = 10;
+var lPaddleY = 300 - pHeight;
+var rPaddleX = width - 10;
+var rPaddleY = 300 - pHeight;
+var pSpeed = 2.5;
+var player = 0;
+
+var keyUpIsDown = false;
+var keyDownIsDown = false;
+
+var connection;
+var json;
+
+var canvas;
+var context;
+
+function clear()
+{
+	context.beginPath();
+	context.rect(0, 0, width, height);
+	context.fillStyle = "#000000";
+	context.fill();
+	context.lineWidth = 3;
+	context.strokeStyle = "black";
+	//context.stroke();
+};
+
+function drawLeftPaddle(x, y)
+{
+	context.beginPath();
+	context.rect(x, y, pWidth, pHeight);
+	context.fillStyle = "#ffffff";
+	context.fill();
+	//context.lineWidth = 3;
+	//context.strokeStyle = "black";
+	//context.stroke();
+};
+
+function drawRightPaddle(x, y)
+{
+	context.beginPath();
+	context.rect(x - pWidth, y, pWidth, pHeight);
+	context.fillStyle = "#ffffff";
+	context.fill();
+	//context.lineWidth = 3;
+	//context.strokeStyle = "black";
+	//context.stroke();
+};
+
+function drawBall(x, y)
+{
+	context.beginPath();
+	context.rect(x, y, bWidth, bHeight);
+	//context.fillStyle = "#8ED6FF";
+	context.fillStyle = "#ffffff";
+	context.fill();
+	//context.lineWidth = 3;
+	//context.strokeStyle = "black";
+	//context.stroke();
+};
+
+
+function processKeyDown(evt){
+	if (evt.keyCode === 38)
+	{
+		keyUpIsDown = true;
+	} else if (evt.keyCode === 40) {
+		keyDownIsDown = true;
+	}
+};
+
+function processKeyUp(evt){
+	if (evt.keyCode === 38)
+	{
+		keyUpIsDown = false;
+	} else if (evt.keyCode === 40) {
+		keyDownIsDown = false;
+	}
+};
+
+function draw()
+{
+	clear();
+	
+	if (keyUpIsDown)
+	{
+		//lPaddleY = lPaddleY - pSpeed;
+	}
+	if (keyDownIsDown){
+		//lPaddleY = lPaddleY + pSpeed;
+	}
+	
+	drawLeftPaddle(lPaddleX, lPaddleY);
+	drawRightPaddle(rPaddleX, rPaddleY);
+	drawBall(ballX, ballY);
+	//drawBall();
+};
+
+function buildWebSock(){
+	//alert("Building websock!")
+	connection = new WebSocket('ws://localhost:1337');	
+	
+	connection.onopen = function () {
+        alert("Connected!");
+    };
+
+    connection.onerror = function (error) {
+        alert("Error!");
+    };
+    
+    connection.onmessage = function (message) {
+		try {
+			//alert('Received!');
+			var json = JSON.parse(message.data);
+			//alert('Parsed!')
+			if (json.type === 'update')
+			{
+				lPaddleY = json.rleftY;
+				rPaddleY = json.rrightY;
+				ballX = json.rballX;
+				ballY = json.rballY;		
+				alert('JSON data loaded! UPDATE' + json.rleftY);
+			} else if (json.type === 'player')
+			{
+				player = json.player;
+				alert('JSON data loaded! TYPE');
+			}
+		} catch (e) {
+			alert('This doesnt look like a valid JSON: ' + message.data + "<br />");
+			return;
+		}
+		
+		alert('Preparing JSON data!');
+		
+		var jsonOut = {
+			sleftY: lPaddleY,
+			upKey: keyUpIsDown,
+			downKey: keyDownIsDown
+		};
+		
+		alert('JSON Data prepared!');
+		connection.send(JSON.stringify(jsonOut));
+		alert('JSON Data sent!');
+    };
+};
+
+function init()
+{
+	canvas = document.getElementById("myCanvas");
+	context = canvas.getContext("2d");
+
+	buildWebSock();
+
+	context.beginPath();
+	context.rect(0, 0, width, height);
+	context.fillStyle = "#ffffff";
+	context.fill();
+	context.lineWidth = 3;
+	context.strokeStyle = "black";
+	context.stroke();
+
+	return setInterval(draw, 16);
+};
+
+init();
+window.addEventListener('keydown', processKeyDown, true);
+window.addEventListener('keyup', processKeyUp, true);
+
+</script>
+
+</section>
+</body>
+</html>
